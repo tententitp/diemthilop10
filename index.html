@@ -1453,10 +1453,9 @@
         if (badgesParam) params.append('badges', badgesParam);
       } catch (e) { /* ignore */ }
       const url = 'certificate_template.html?' + params.toString();
-      window.open(url, '_blank');
+      // navigate in the same tab instead of opening a new one
       closeShareModal();
-      // simple reset: refresh page so template assets and state are cleared
-      setTimeout(() => { try { window.location.reload(); } catch (e) { /* ignore */ } }, 80);
+      try { window.location.href = url; } catch (e) { /* fallback to open in same window */ window.open(url, '_self'); }
     });
     // Preview and modal-sharing controls removed per user request
     tabButtons.forEach((btn) => {
