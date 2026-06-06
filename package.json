@@ -1,0 +1,11 @@
+{
+  "name": "diemthilop10-share-image",
+  "version": "1.0.0",
+  "private": true,
+  "scripts": {
+    "generate": "node generate-share-image.js"
+  },
+  "dependencies": {
+    "puppeteer": "^24.43.1"
+  }
+}
