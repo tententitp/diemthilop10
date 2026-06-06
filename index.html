@@ -1,0 +1,1018 @@
+<!doctype html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Dashboard tra cứu điểm thi</title>
+  <style>
+    body {
+      margin: 0;
+      min-height: 100vh;
+      padding: 0;
+      background:
+        radial-gradient(circle at 12% 12%, rgba(108, 92, 231, 0.45), transparent 28%),
+        radial-gradient(circle at 88% 18%, rgba(72, 126, 255, 0.35), transparent 26%),
+        radial-gradient(circle at 50% 92%, rgba(56, 189, 248, 0.22), transparent 30%),
+        linear-gradient(135deg, #12062a 0%, #1a0d3d 38%, #081a3a 72%, #041021 100%);
+      color: #f8fafc;
+      font-family: "Segoe UI", Arial, sans-serif;
+    }
+    .wrap {
+      position: relative;
+      width: 100%;
+      min-height: 100vh;
+      margin: 0;
+      padding: 22px;
+      box-sizing: border-box;
+      background:
+        linear-gradient(180deg, rgba(255,255,255,0.08), rgba(255,255,255,0.03)),
+        rgba(255, 255, 255, 0.03);
+      backdrop-filter: blur(18px);
+      -webkit-backdrop-filter: blur(18px);
+    }
+    .wrap::before,
+    .wrap::after {
+      content: "";
+      position: fixed;
+      inset: auto;
+      pointer-events: none;
+      z-index: 0;
+      border-radius: 999px;
+      filter: blur(24px);
+      opacity: 0.45;
+    }
+    .wrap::before {
+      width: 320px;
+      height: 320px;
+      left: -80px;
+      top: 140px;
+      background: radial-gradient(circle, rgba(122, 92, 255, 0.55), rgba(122, 92, 255, 0.05) 70%, transparent 72%);
+    }
+    .wrap::after {
+      width: 260px;
+      height: 260px;
+      right: 12px;
+      bottom: 24px;
+      background: radial-gradient(circle, rgba(66, 153, 225, 0.42), rgba(66, 153, 225, 0.05) 70%, transparent 72%);
+    }
+    h1 {
+      position: relative;
+      z-index: 1;
+      margin: 0 0 8px;
+      font-size: clamp(28px, 3vw, 46px);
+      line-height: 1.05;
+      letter-spacing: 0.02em;
+      text-shadow: 0 0 18px rgba(255,255,255,0.12);
+    }
+    .note {
+      position: relative;
+      z-index: 1;
+      margin: 0 0 16px;
+      color: rgba(255, 255, 255, 0.92);
+      font-size: 15px;
+      font-weight: 500;
+    }
+    .note strong {
+      color: #ffd166;
+      font-weight: 700;
+    }
+    .tabs {
+      position: relative;
+      z-index: 1;
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin-bottom: 14px;
+    }
+    .tab-btn {
+      padding: 9px 14px;
+      border: 1px solid rgba(255,255,255,0.18);
+      border-radius: 8px;
+      background: rgba(255,255,255,0.08);
+      color: #f8fafc;
+      cursor: pointer;
+      font-weight: 600;
+      box-shadow: 0 8px 24px rgba(0,0,0,0.14);
+    }
+    .tab-btn.active {
+      background: linear-gradient(135deg, #7c3aed, #2563eb);
+      border-color: transparent;
+      color: #fff;
+    }
+    .tab-pane {
+      display: none;
+    }
+    .tab-pane.active {
+      display: block;
+    }
+    .controls {
+      display: grid;
+      grid-template-columns: 1fr repeat(3, minmax(120px, 160px)) 220px;
+      gap: 10px;
+      margin-bottom: 14px;
+    }
+    .autocomplete {
+      position: relative;
+    }
+    input, select {
+      padding: 10px;
+      border: 1px solid rgba(255,255,255,0.16);
+      border-radius: 8px;
+      font-size: 14px;
+      background: rgba(15, 23, 42, 0.56);
+      color: #f8fafc;
+      box-shadow: inset 0 1px 0 rgba(255,255,255,0.06);
+    }
+    input::placeholder {
+      color: rgba(226, 232, 240, 0.7);
+    }
+    .suggestions {
+      position: absolute;
+      left: 0;
+      right: 0;
+      top: calc(100% + 4px);
+      z-index: 20;
+      background: rgba(15, 23, 42, 0.96);
+      border: 1px solid rgba(255,255,255,0.14);
+      border-radius: 8px;
+      max-height: 240px;
+      overflow: auto;
+      box-shadow: 0 12px 30px rgba(0, 0, 0, 0.32);
+      display: none;
+    }
+    .suggestions.show {
+      display: block;
+    }
+    .suggest-item {
+      padding: 8px 10px;
+      border-bottom: 1px solid rgba(255,255,255,0.08);
+      cursor: pointer;
+      font-size: 13px;
+    }
+    .suggest-item:last-child {
+      border-bottom: none;
+    }
+    .suggest-item:hover {
+      background: rgba(99, 102, 241, 0.2);
+    }
+    .cards {
+      display: grid;
+      grid-template-columns: repeat(6, minmax(140px, 1fr));
+      gap: 10px;
+      margin: 10px 0 16px;
+    }
+    .card {
+      background: linear-gradient(180deg, rgba(255,255,255,0.1), rgba(255,255,255,0.05));
+      border: 1px solid rgba(255,255,255,0.12);
+      border-radius: 10px;
+      padding: 10px;
+      color: #fff;
+      box-shadow: 0 10px 24px rgba(2, 6, 23, 0.18);
+    }
+    .card .label {
+      font-size: 12px;
+      color: rgba(255, 255, 255, 0.84);
+      margin-bottom: 4px;
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+    }
+    .card .value {
+      font-size: 20px;
+      font-weight: 700;
+      letter-spacing: 0.01em;
+    }
+    .charts {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 12px;
+      margin-bottom: 16px;
+    }
+    .panel {
+      border: 1px solid rgba(255,255,255,0.12);
+      border-radius: 10px;
+      padding: 10px;
+      background: linear-gradient(180deg, rgba(17, 24, 39, 0.72), rgba(15, 23, 42, 0.55));
+      color: #f8fafc;
+      overflow: hidden;
+      box-shadow: 0 14px 40px rgba(2, 6, 23, 0.22);
+    }
+    .panel h3 {
+      margin: 0 0 8px;
+      font-size: 14px;
+      color: #f8fafc;
+      letter-spacing: 0.03em;
+      text-transform: uppercase;
+    }
+    canvas {
+      width: 100%;
+      height: 240px;
+      display: block;
+      background: transparent;
+      touch-action: manipulation;
+    }
+    .chart-readout {
+      margin-top: 8px;
+      padding: 8px 10px;
+      border-radius: 8px;
+      background: rgba(255, 255, 255, 0.06);
+      color: rgba(255, 255, 255, 0.95);
+      font-size: 13px;
+      font-weight: 600;
+      border: 1px solid rgba(255, 255, 255, 0.1);
+    }
+    .extras {
+      display: grid;
+      grid-template-columns: 1fr 1fr 1fr;
+      gap: 12px;
+      margin-bottom: 16px;
+    }
+    .mini-controls {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 8px;
+      margin-bottom: 8px;
+    }
+    .result {
+      font-size: 13px;
+      line-height: 1.5;
+      color: rgba(255, 255, 255, 0.94);
+      min-height: 42px;
+      font-weight: 500;
+    }
+    .delta-up { color: #16a34a; font-weight: 600; }
+    .delta-down { color: #dc2626; font-weight: 600; }
+    .delta-flat { color: #64748b; font-weight: 600; }
+    .status-pass {
+      color: #86efac;
+      font-weight: 800;
+    }
+    .status-round2 {
+      color: #fde68a;
+      font-weight: 800;
+    }
+    .status-fail {
+      color: #fca5a5;
+      font-weight: 800;
+    }
+    .status-pass::before,
+    .status-round2::before,
+    .status-fail::before {
+      display: inline-block;
+      margin-right: 6px;
+      font-size: 11px;
+      font-weight: 900;
+    }
+    .status-pass::before { content: "●"; color: #22c55e; }
+    .status-round2::before { content: "●"; color: #f59e0b; }
+    .status-fail::before { content: "●"; color: #ef4444; }
+    .top-list {
+      max-height: 220px;
+      overflow: auto;
+      border: 1px solid rgba(255,255,255,0.12);
+      border-radius: 8px;
+    }
+    .top-list table {
+      min-width: 100%;
+      font-size: 13px;
+    }
+    .top-list th, .top-list td {
+      padding: 8px;
+    }
+    .panel-table-wrap {
+      overflow-x: auto;
+      -webkit-overflow-scrolling: touch;
+      border: 1px solid rgba(255,255,255,0.12);
+      border-radius: 8px;
+    }
+    .panel-table-wrap table {
+      min-width: 520px;
+    }
+    .rank-controls {
+      display: grid;
+      grid-template-columns: 1fr 180px;
+      gap: 10px;
+      margin-bottom: 10px;
+    }
+    .stats {
+      font-size: 14px;
+      color: rgba(255, 255, 255, 0.9);
+      margin-bottom: 10px;
+      font-weight: 600;
+    }
+    .table-wrap {
+      overflow-x: auto;
+      -webkit-overflow-scrolling: touch;
+      border: 1px solid rgba(255,255,255,0.12);
+      border-radius: 10px;
+    }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+    }
+    .main-score-table {
+      min-width: 980px;
+    }
+    th, td {
+      padding: 10px;
+      border-bottom: 1px solid rgba(255,255,255,0.08);
+      text-align: left;
+      font-size: 14px;
+      white-space: nowrap;
+      color: #f8fafc;
+    }
+    th {
+      position: sticky;
+      top: 0;
+      background: rgba(14, 22, 44, 0.92);
+      z-index: 1;
+    }
+    tr:hover td {
+      background: rgba(99, 102, 241, 0.14);
+    }
+    .status-pass {
+      color: #86efac;
+      font-weight: 700;
+    }
+    .status-fail {
+      color: #fca5a5;
+      font-weight: 700;
+    }
+    .status-pass::before,
+    .status-fail::before {
+      display: inline-block;
+      margin-right: 6px;
+      font-size: 11px;
+      font-weight: 800;
+    }
+    .status-pass::before { content: "●"; color: #22c55e; }
+    .status-fail::before { content: "●"; color: #ef4444; }
+    @media (max-width: 1024px) {
+      .controls { grid-template-columns: 1fr 1fr; }
+      .cards { grid-template-columns: repeat(2, 1fr); }
+      .charts, .extras { grid-template-columns: 1fr; }
+      .rank-controls { grid-template-columns: 1fr 1fr; }
+    }
+    @media (max-width: 640px) {
+      .wrap { padding: 14px; }
+      .tabs { gap: 6px; }
+      .tab-btn { flex: 1 1 calc(50% - 6px); text-align: center; padding: 8px 10px; }
+      .controls { grid-template-columns: 1fr; }
+      .cards { grid-template-columns: 1fr; }
+      .mini-controls { grid-template-columns: 1fr; }
+      .rank-controls { grid-template-columns: 1fr; }
+      th, td { font-size: 13px; padding: 8px; }
+    }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <h1>Dashboard tra cứu điểm thi</h1>
+    <p class="note">Điểm chuẩn <strong>14.25</strong><br>
+      Chỉ tiêu xét đợt 2 <strong>44 thí sinh</strong><br>
+      Dữ liệu tham khảo từ <a href="https://diemthi.tuyensinh247.com/dc-lop10/hung-yen-p5.html" target="_blank" rel="noopener noreferrer">Trang tuyển sinh 247</a>
+    </p>
+    <div class="tabs">
+      <button class="tab-btn active" data-tab="tab-list">Toàn bộ danh sách</button>
+      <button class="tab-btn" data-tab="tab-ranking">Xếp hạng</button>
+      <button class="tab-btn" data-tab="tab-charts">Biểu đồ</button>
+      <button class="tab-btn" data-tab="tab-lookup">So sánh</button>
+    </div>
+
+    <div id="tab-list" class="tab-pane active">
+      <div class="controls">
+        <div class="autocomplete">
+          <input id="query" type="text" placeholder="Nhập SBD / họ tên / trường...">
+          <div id="querySuggest" class="suggestions"></div>
+        </div>
+        <input id="minTotal" type="number" step="0.1" min="0" max="30" placeholder="Tổng từ">
+        <input id="maxTotal" type="number" step="0.1" min="0" max="30" placeholder="Tổng đến">
+        <select id="lietFilter">
+          <option value="none">Không lọc điểm liệt</option>
+          <option value="1">Có môn &lt; 1</option>
+          <option value="2">Có môn &lt; 2</option>
+        </select>
+        <select id="sort">
+          <option value="Hang-asc">Sắp xếp: Hạng tăng</option>
+          <option value="Hang-desc">Sắp xếp: Hạng giảm</option>
+          <option value="Tổng-desc">Sắp xếp: Tổng giảm</option>
+          <option value="Tổng-asc">Sắp xếp: Tổng tăng</option>
+          <option value="Văn-desc">Sắp xếp: Văn giảm</option>
+          <option value="Văn-asc">Sắp xếp: Văn tăng</option>
+          <option value="Anh-desc">Sắp xếp: Anh giảm</option>
+          <option value="Anh-asc">Sắp xếp: Anh tăng</option>
+          <option value="Toán-desc">Sắp xếp: Toán giảm</option>
+          <option value="Toán-asc">Sắp xếp: Toán tăng</option>
+          <option value="TB-desc">Sắp xếp: TB 3 môn giảm</option>
+          <option value="TB-asc">Sắp xếp: TB 3 môn tăng</option>
+          <option value="TrangThai-desc">Sắp xếp: Đỗ trước</option>
+          <option value="TrangThai-asc">Sắp xếp: Trượt trước</option>
+        </select>
+      </div>
+      <div class="stats" id="stats"></div>
+      <div class="table-wrap">
+        <table class="main-score-table">
+          <thead>
+            <tr>
+              <th>STT</th>
+              <th>SBD</th>
+              <th>Họ tên</th>
+              <th>Ngày sinh</th>
+              <th>Văn</th>
+              <th>Anh</th>
+              <th>Toán</th>
+              <th>Tổng</th>
+              <th>TB 3 môn</th>
+              <th>Trạng thái</th>
+              <th>Hạng</th>
+            </tr>
+          </thead>
+          <tbody id="rows"></tbody>
+        </table>
+      </div>
+    </div>
+
+    <div id="tab-ranking" class="tab-pane">
+      <div class="panel">
+        <h3>Top thí sinh theo môn</h3>
+        <div class="rank-controls">
+          <select id="rankMetric">
+            <option value="Tổng">Xếp theo Tổng</option>
+            <option value="Văn">Xếp theo Văn</option>
+            <option value="Anh">Xếp theo Anh</option>
+            <option value="Toán">Xếp theo Toán</option>
+            <option value="TB">Xếp theo TB 3 môn</option>
+          </select>
+          <select id="rankLimit">
+            <option value="5">Top 5</option>
+            <option value="10" selected>Top 10</option>
+            <option value="20">Top 20</option>
+            <option value="50">Top 50</option>
+          </select>
+        </div>
+        <div class="top-list">
+          <table>
+            <thead>
+              <tr><th>Hạng</th><th>SBD</th><th>Họ tên</th><th>Môn chọn</th><th>Tổng</th><th>TB</th></tr>
+            </thead>
+            <tbody id="rankRows"></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <div id="tab-charts" class="tab-pane">
+      <div class="cards" id="kpiCards"></div>
+      <div class="charts">
+        <div class="panel">
+          <h3>Phổ điểm tổng</h3>
+          <canvas id="histTong"></canvas>
+          <div class="chart-readout" id="readoutTong">Bấm vào cột để xem số lượng.</div>
+        </div>
+        <div class="panel">
+          <h3>Phổ điểm môn Văn</h3>
+          <canvas id="histVan"></canvas>
+          <div class="chart-readout" id="readoutVan">Bấm vào cột để xem số lượng.</div>
+        </div>
+        <div class="panel">
+          <h3>Phổ điểm môn Anh</h3>
+          <canvas id="histAnh"></canvas>
+          <div class="chart-readout" id="readoutAnh">Bấm vào cột để xem số lượng.</div>
+        </div>
+        <div class="panel">
+          <h3>Phổ điểm môn Toán</h3>
+          <canvas id="histToan"></canvas>
+          <div class="chart-readout" id="readoutToan">Bấm vào cột để xem số lượng.</div>
+        </div>
+      </div>
+    </div>
+
+    <div id="tab-lookup" class="tab-pane">
+      <div class="panel">
+        <h3>So sánh 2 thí sinh</h3>
+        <div class="mini-controls">
+          <div class="autocomplete">
+            <input id="sbdA" placeholder="SBD hoặc tên A">
+            <div id="sbdASuggest" class="suggestions"></div>
+          </div>
+          <div class="autocomplete">
+            <input id="sbdB" placeholder="SBD hoặc tên B">
+            <div id="sbdBSuggest" class="suggestions"></div>
+          </div>
+        </div>
+        <button id="btnCompare" type="button">So sánh</button>
+        <div class="result" id="compareResult"></div>
+      </div>
+    </div>
+  </div>
+
+  <script src="data.js"></script>
+  <script>
+    const DATA = (window.DIEM_THI || []).map((r) => ({
+      SBD: String(r.SBD || "").trim(),
+      "Họ tên": String(r["Họ tên"] || "").trim(),
+      "Ngày Sinh": String(r["Ngày Sinh"] || r["Ngày sinh"] || "").trim(),
+      Văn: Number(r.Văn) || 0,
+      Anh: Number(r.Anh) || 0,
+      Toán: Number(r.Toán) || 0,
+      Tổng: Number(r.Tổng) || 0,
+      TB: 0,
+      TrangThai: "",
+      Dot: "",
+      Hang: 0,
+      STT: Number(r.STT) || 0
+    }));
+    DATA.forEach((r) => {
+      r.TB = (r.Văn + r.Anh + r.Toán) / 3;
+      r.TrangThai = r.Tổng >= 14.25 ? "Đỗ" : "Trượt";
+    });
+    [...DATA]
+      .sort((a, b) => {
+        if (b.Tổng !== a.Tổng) return b.Tổng - a.Tổng;
+        return a.STT - b.STT;
+      })
+      .forEach((r, idx) => {
+        r.Hang = idx + 1;
+      });
+    (function assignRound2() {
+      const failed = [...DATA]
+        .filter((r) => r.TrangThai === "Trượt")
+        .sort((a, b) => {
+          if (b.Tổng !== a.Tổng) return b.Tổng - a.Tổng;
+          return a.STT - b.STT;
+        });
+      failed.slice(0, 44).forEach((r) => {
+        r.Dot = "Xét đợt 2";
+      });
+      failed.slice(44).forEach((r) => {
+        r.Dot = "Trượt";
+      });
+      DATA.forEach((r) => {
+        if (r.TrangThai === "Đỗ") r.Dot = "Đỗ";
+      });
+    })();
+
+    const rowsEl = document.getElementById("rows");
+    const tabButtons = document.querySelectorAll(".tab-btn");
+    const tabPanes = document.querySelectorAll(".tab-pane");
+    const queryEl = document.getElementById("query");
+    const querySuggestEl = document.getElementById("querySuggest");
+    const minTotalEl = document.getElementById("minTotal");
+    const maxTotalEl = document.getElementById("maxTotal");
+    const lietFilterEl = document.getElementById("lietFilter");
+    const sortEl = document.getElementById("sort");
+    const statsEl = document.getElementById("stats");
+    const kpiCardsEl = document.getElementById("kpiCards");
+    const rankMetricEl = document.getElementById("rankMetric");
+    const rankLimitEl = document.getElementById("rankLimit");
+    const rankRowsEl = document.getElementById("rankRows");
+    const sbdAEl = document.getElementById("sbdA");
+    const sbdASuggestEl = document.getElementById("sbdASuggest");
+    const sbdBEl = document.getElementById("sbdB");
+    const sbdBSuggestEl = document.getElementById("sbdBSuggest");
+    const btnCompareEl = document.getElementById("btnCompare");
+    const compareResultEl = document.getElementById("compareResult");
+    const histTongEl = document.getElementById("histTong");
+    const histVanEl = document.getElementById("histVan");
+    const histAnhEl = document.getElementById("histAnh");
+    const histToanEl = document.getElementById("histToan");
+    const readoutTongEl = document.getElementById("readoutTong");
+    const readoutVanEl = document.getElementById("readoutVan");
+    const readoutAnhEl = document.getElementById("readoutAnh");
+    const readoutToanEl = document.getElementById("readoutToan");
+    const MAX_RENDER = 200;
+
+    function normalize(text) {
+      return (text || "")
+        .toString()
+        .normalize("NFD")
+        .replace(/[\u0300-\u036f]/g, "")
+        .toLowerCase()
+        .trim();
+    }
+
+    function sortData(data, sortValue) {
+      const [field, dir] = sortValue.split("-");
+      const factor = dir === "desc" ? -1 : 1;
+      if (field === "Hang") {
+        return [...data].sort((a, b) => {
+          const av = Number(a.Hang) || 0;
+          const bv = Number(b.Hang) || 0;
+          if (av < bv) return -1 * factor;
+          if (av > bv) return 1 * factor;
+          return 0;
+        });
+      }
+      if (field === "TrangThai") {
+        return [...data].sort((a, b) => {
+          const order = { "Đỗ": 3, "Xét đợt 2": 2, "Trượt": 1 };
+          const av = order[a.Dot || a.TrangThai] || 0;
+          const bv = order[b.Dot || b.TrangThai] || 0;
+          if (av < bv) return -1 * factor;
+          if (av > bv) return 1 * factor;
+          return 0;
+        });
+      }
+      return [...data].sort((a, b) => {
+        const av = Number(a[field]) || 0;
+        const bv = Number(b[field]) || 0;
+        if (av < bv) return -1 * factor;
+        if (av > bv) return 1 * factor;
+        return 0;
+      });
+    }
+
+    function filterData(data, query) {
+      const q = normalize(query);
+      const selectedSbd = queryEl.dataset.selectedSbd || "";
+      const minTotal = parseOptionalNumber(minTotalEl.value);
+      const maxTotal = parseOptionalNumber(maxTotalEl.value);
+      const lietThreshold = lietFilterEl.value === "none" ? null : Number(lietFilterEl.value);
+      let regex = null;
+      if (!selectedSbd && query && query.trim()) {
+        try {
+          const raw = String(query).trim();
+          const slashMatch = raw.match(/^\/(.+)\/([gimsuy]*)$/);
+          regex = slashMatch ? new RegExp(slashMatch[1], slashMatch[2] || "i") : new RegExp(raw, "i");
+        } catch (e) {
+          regex = null;
+        }
+      }
+      return data.filter((r) => {
+        if (selectedSbd && r.SBD !== selectedSbd) return false;
+        const hay = `${r.SBD} ${r["Họ tên"]} ${r["Ngày Sinh"] || ""}`;
+        if (!selectedSbd && q) {
+          if (regex) {
+            if (regex.global || regex.sticky) regex.lastIndex = 0;
+            if (!regex.test(hay)) return false;
+          } else if (!normalize(hay).includes(q)) {
+            return false;
+          }
+        }
+        if (minTotal !== null && r.Tổng < minTotal) return false;
+        if (maxTotal !== null && r.Tổng > maxTotal) return false;
+        if (lietThreshold !== null) {
+          if (!(r.Văn < lietThreshold || r.Anh < lietThreshold || r.Toán < lietThreshold)) return false;
+        }
+        return true;
+      });
+    }
+
+    function parseOptionalNumber(raw) {
+      const text = String(raw || "").trim();
+      if (!text) return null;
+      const n = Number(text);
+      return Number.isFinite(n) ? n : null;
+    }
+
+    function getNameSuggestions(keyword) {
+      const q = normalize(keyword);
+      if (!q) return [];
+      return DATA
+        .filter((r) => normalize(r["Họ tên"]).includes(q) || normalize(r["Ngày Sinh"] || "").includes(q) || r.SBD.includes(String(keyword || "").trim()))
+        .slice(0, 8);
+    }
+
+    function hideSuggestions(boxEl) {
+      boxEl.classList.remove("show");
+      boxEl.innerHTML = "";
+    }
+
+    function renderSuggestions(inputEl, boxEl) {
+      const suggestions = getNameSuggestions(inputEl.value);
+      if (!suggestions.length) {
+        hideSuggestions(boxEl);
+        return;
+      }
+      boxEl.innerHTML = suggestions.map((r) =>
+        `<div class="suggest-item" data-sbd="${r.SBD}" data-name="${r["Họ tên"]}">
+          <strong>${r["Họ tên"]}</strong> - ${r.SBD}<br><span style="color:#64748b">${r["Ngày Sinh"] || ""}</span>
+        </div>`
+      ).join("");
+      boxEl.classList.add("show");
+    }
+
+    function findStudentByKeyword(keyword) {
+      const raw = String(keyword || "").trim();
+      if (!raw) return null;
+      const bySbd = DATA.find((x) => x.SBD === raw);
+      if (bySbd) return bySbd;
+      const q = normalize(raw);
+      return DATA.find((x) => normalize(x["Họ tên"]) === q || normalize(x["Họ tên"]).includes(q)) || null;
+    }
+
+    function avg(values) {
+      if (!values.length) return 0;
+      return values.reduce((sum, x) => sum + x, 0) / values.length;
+    }
+
+    function rate(data, predicate) {
+      if (!data.length) return 0;
+      const n = data.filter(predicate).length;
+      return (n * 100) / data.length;
+    }
+
+    function renderKpis(data) {
+      const cards = [
+        { label: "Số thí sinh (lọc)", value: `${data.length}` },
+        { label: "TB Tổng", value: avg(data.map((x) => x.Tổng)).toFixed(2) },
+        { label: "TB Văn", value: avg(data.map((x) => x.Văn)).toFixed(2) },
+        { label: "TB Anh", value: avg(data.map((x) => x.Anh)).toFixed(2) },
+        { label: "TB Toán", value: avg(data.map((x) => x.Toán)).toFixed(2) },
+        { label: "Tỷ lệ Tổng >= 24", value: `${rate(data, (x) => x.Tổng >= 24).toFixed(1)}%` },
+        { label: "Tỷ lệ đỗ (>=14.25)", value: `${rate(data, (x) => x.Tổng >= 14.25).toFixed(1)}%` },
+        { label: "Xét đợt 2", value: `${DATA.filter((x) => x.Dot === "Xét đợt 2").length}` }
+      ];
+      kpiCardsEl.innerHTML = cards.map((c) =>
+        `<div class="card"><div class="label">${c.label}</div><div class="value">${c.value}</div></div>`
+      ).join("");
+    }
+
+    function drawHistogram(canvas, values, config) {
+      const min = config.min;
+      const max = config.max;
+      const step = config.step;
+      const xTickStep = config.xTickStep || 1;
+      const bins = Math.floor((max - min) / step);
+      const counts = new Array(bins).fill(0);
+
+      values.forEach((v) => {
+        if (v < min || v > max) return;
+        const idx = Math.min(bins - 1, Math.floor((v - min) / step));
+        if (idx >= 0) counts[idx] += 1;
+      });
+
+      const dpr = Math.max(2, Math.ceil(window.devicePixelRatio || 1));
+      const rect = canvas.getBoundingClientRect();
+      const w = Math.max(320, Math.round(rect.width));
+      const h = Math.max(240, Math.round(rect.height));
+      canvas.width = w * dpr;
+      canvas.height = h * dpr;
+      const ctx = canvas.getContext("2d");
+      ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+      ctx.imageSmoothingEnabled = false;
+
+      ctx.clearRect(0, 0, w, h);
+
+      const padL = 40;
+      const padR = 14;
+      const padT = 16;
+      const padB = 34;
+      const chartW = w - padL - padR;
+      const chartH = h - padT - padB;
+      const maxCount = Math.max(1, ...counts);
+      const barW = chartW / bins;
+      const bars = [];
+
+      ctx.fillStyle = "rgba(15, 23, 42, 0.34)";
+      ctx.fillRect(padL - 10, padT - 8, chartW + 20, chartH + 16);
+      ctx.strokeStyle = "rgba(255,255,255,0.08)";
+      ctx.strokeRect(padL - 10, padT - 8, chartW + 20, chartH + 16);
+
+      const yTickCount = 4;
+      ctx.textBaseline = "middle";
+      ctx.font = "11px Segoe UI";
+      for (let i = 0; i <= yTickCount; i += 1) {
+        const ratio = i / yTickCount;
+        const y = Math.round(h - padB - ratio * chartH) + 0.5;
+        const yVal = Math.round(ratio * maxCount);
+        ctx.strokeStyle = "rgba(255,255,255,0.08)";
+        ctx.beginPath();
+        ctx.moveTo(padL, y);
+        ctx.lineTo(w - padR, y);
+        ctx.stroke();
+        ctx.fillStyle = "rgba(255,255,255,0.72)";
+        ctx.textAlign = "right";
+        ctx.fillText(String(yVal), padL - 8, y);
+      }
+
+      const grad = ctx.createLinearGradient(0, padT, 0, h - padB);
+      grad.addColorStop(0, config.colorTop || config.color);
+      grad.addColorStop(1, config.color || "#4f46e5");
+      ctx.fillStyle = grad;
+      for (let i = 0; i < bins; i += 1) {
+        const barH = (counts[i] / maxCount) * chartH;
+        const x = Math.round(padL + i * barW + 1);
+        const y = Math.round(h - padB - barH);
+        const bw = Math.max(1, Math.round(barW - 3));
+        roundRect(ctx, x, y, bw, Math.max(1, Math.round(barH)), 6);
+        ctx.fill();
+        bars.push({
+          index: i,
+          count: counts[i],
+          from: min + i * step,
+          to: min + (i + 1) * step,
+          x,
+          y,
+          w: bw,
+          h: Math.max(1, Math.round(barH))
+        });
+      }
+
+      ctx.font = "11px Segoe UI";
+      ctx.fillStyle = "rgba(255,255,255,0.72)";
+      ctx.textAlign = "center";
+      for (let xTick = min; xTick <= max + 1e-9; xTick += xTickStep) {
+        const ratio = (xTick - min) / (max - min);
+        const x = Math.round(padL + ratio * chartW) + 0.5;
+        const label = Number.isInteger(xTick) ? String(xTick) : xTick.toFixed(1);
+        ctx.fillText(label, x, h - 16);
+      }
+      ctx.textAlign = "left";
+      ctx.fillStyle = "rgba(255,255,255,0.92)";
+      ctx.font = "12px Segoe UI";
+      ctx.fillText(`Tối đa: ${maxCount}`, padL, padT - 4);
+
+      canvas._histogramMeta = { bars, min, max, step, padL, padR, padT, padB, chartW, chartH, maxCount };
+    }
+
+    function roundRect(ctx, x, y, width, height, radius) {
+      const r = Math.min(radius, width / 2, height / 2);
+      ctx.beginPath();
+      ctx.moveTo(x + r, y);
+      ctx.arcTo(x + width, y, x + width, y + height, r);
+      ctx.arcTo(x + width, y + height, x, y + height, r);
+      ctx.arcTo(x, y + height, x, y, r);
+      ctx.arcTo(x, y, x + width, y, r);
+      ctx.closePath();
+    }
+
+    function setupHistogramInteractions(canvas, readoutEl, label) {
+      const showBarInfo = (event) => {
+        const meta = canvas._histogramMeta;
+        if (!meta) return false;
+        const rect = canvas.getBoundingClientRect();
+        const x = event.clientX - rect.left;
+        const y = event.clientY - rect.top;
+        const bar = meta.bars.find((b) => x >= b.x && x <= b.x + b.w && y >= b.y && y <= b.y + b.h);
+        if (!bar) return false;
+        readoutEl.textContent = `${label}: khoảng ${formatRange(bar.from, bar.to, meta.step)} có ${bar.count} thí sinh.`;
+        return true;
+      };
+
+      canvas.addEventListener("pointermove", (event) => {
+        if (!showBarInfo(event)) {
+          readoutEl.textContent = `Rê chuột lên một cột của ${label} để xem số lượng.`;
+        }
+      });
+
+      canvas.addEventListener("pointerleave", () => {
+        readoutEl.textContent = `Rê chuột lên một cột của ${label} để xem số lượng.`;
+      });
+    }
+
+    function formatRange(from, to, step) {
+      const a = Number.isInteger(from) ? from.toFixed(0) : from.toFixed(step < 1 ? 1 : 0);
+      const b = Number.isInteger(to) ? to.toFixed(0) : to.toFixed(step < 1 ? 1 : 0);
+      return `${a} - ${b}`;
+    }
+
+    function renderRanking() {
+      const metric = rankMetricEl.value;
+      const limit = Number(rankLimitEl.value) || 10;
+      const sorted = [...DATA].sort((a, b) => (b[metric] || 0) - (a[metric] || 0)).slice(0, limit);
+      rankRowsEl.innerHTML = sorted.map((x, idx) =>
+        `<tr><td>${idx + 1}</td><td>${x.SBD}</td><td>${x["Họ tên"]}</td><td>${(x[metric] || 0).toFixed(2)}</td><td>${x.Tổng.toFixed(2)}</td><td>${x.TB.toFixed(2)}</td></tr>`
+      ).join("");
+    }
+
+    function formatDelta(label, value) {
+      if (value > 0) return `<span class="delta-up">▲ ${label}: +${value.toFixed(2)}</span>`;
+      if (value < 0) return `<span class="delta-down">▼ ${label}: ${value.toFixed(2)}</span>`;
+      return `<span class="delta-flat">● ${label}: 0.00</span>`;
+    }
+
+    function renderCompare() {
+      const a = findStudentByKeyword(sbdAEl.value);
+      const b = findStudentByKeyword(sbdBEl.value);
+      if (!a || !b) {
+        compareResultEl.textContent = "Nhập đủ 2 SBD/tên hợp lệ để so sánh.";
+        return;
+      }
+      sbdAEl.value = a.SBD;
+      sbdBEl.value = b.SBD;
+      const dVan = a.Văn - b.Văn;
+      const dAnh = a.Anh - b.Anh;
+      const dToan = a.Toán - b.Toán;
+      const dTong = a.Tổng - b.Tổng;
+      compareResultEl.innerHTML = `<strong>${a["Họ tên"]}</strong> vs <strong>${b["Họ tên"]}</strong><br>${formatDelta("Văn", dVan)} | ${formatDelta("Anh", dAnh)} | ${formatDelta("Toán", dToan)} | ${formatDelta("Tổng", dTong)}`;
+    }
+
+    function renderCharts(data) {
+      drawHistogram(histTongEl, data.map((x) => x.Tổng), { min: 0, max: 30, step: 1, xTickStep: 5, color: "#4f7cff", colorTop: "#8fb4ff" });
+      drawHistogram(histVanEl, data.map((x) => x.Văn), { min: 0, max: 10, step: 0.5, xTickStep: 1, color: "#1ec98a", colorTop: "#86efac" });
+      drawHistogram(histAnhEl, data.map((x) => x.Anh), { min: 0, max: 10, step: 0.5, xTickStep: 1, color: "#ffb020", colorTop: "#ffd166" });
+      drawHistogram(histToanEl, data.map((x) => x.Toán), { min: 0, max: 10, step: 0.5, xTickStep: 1, color: "#a855f7", colorTop: "#d8b4fe" });
+    }
+
+    function render() {
+      const filtered = filterData(DATA, queryEl.value);
+      const sorted = sortData(filtered, sortEl.value);
+      const visible = sorted.slice(0, MAX_RENDER);
+
+      rowsEl.innerHTML = visible.map((r, idx) => `
+        <tr>
+          <td>${idx + 1}</td>
+          <td>${r.SBD}</td>
+          <td>${r["Họ tên"]}</td>
+          <td>${r["Ngày Sinh"] || ""}</td>
+          <td>${r.Văn.toFixed(2)}</td>
+          <td>${r.Anh.toFixed(2)}</td>
+          <td>${r.Toán.toFixed(2)}</td>
+          <td>${r.Tổng.toFixed(2)}</td>
+          <td>${r.TB.toFixed(2)}</td>
+          <td class="${
+            r.Dot === "Đỗ" ? "status-pass" : r.Dot === "Xét đợt 2" ? "status-round2" : "status-fail"
+          }">${r.Dot || r.TrangThai}</td>
+          <td>${r.Hang}</td>
+        </tr>
+      `).join("");
+
+      const extra = filtered.length > MAX_RENDER ? ` (đang hiển thị ${MAX_RENDER})` : "";
+      statsEl.textContent = `Tìm thấy ${filtered.length} học sinh${extra}.`;
+      renderKpis(filtered);
+      renderCharts(filtered);
+    }
+
+    queryEl.addEventListener("input", () => {
+      queryEl.dataset.selectedSbd = "";
+      render();
+      renderSuggestions(queryEl, querySuggestEl);
+    });
+    queryEl.addEventListener("focus", () => renderSuggestions(queryEl, querySuggestEl));
+    queryEl.addEventListener("keydown", (e) => {
+      if (e.key === "Enter") {
+        const first = querySuggestEl.querySelector(".suggest-item");
+        if (first) {
+          queryEl.value = first.dataset.name || "";
+          queryEl.dataset.selectedSbd = first.dataset.sbd || "";
+          hideSuggestions(querySuggestEl);
+          render();
+        }
+      }
+    });
+    querySuggestEl.addEventListener("click", (e) => {
+      const item = e.target.closest(".suggest-item");
+      if (!item) return;
+      queryEl.value = item.dataset.name || "";
+      queryEl.dataset.selectedSbd = item.dataset.sbd || "";
+      hideSuggestions(querySuggestEl);
+      render();
+    });
+    sbdAEl.addEventListener("input", () => renderSuggestions(sbdAEl, sbdASuggestEl));
+    sbdAEl.addEventListener("focus", () => renderSuggestions(sbdAEl, sbdASuggestEl));
+    sbdASuggestEl.addEventListener("click", (e) => {
+      const item = e.target.closest(".suggest-item");
+      if (!item) return;
+      sbdAEl.value = item.dataset.sbd || "";
+      hideSuggestions(sbdASuggestEl);
+    });
+    sbdBEl.addEventListener("input", () => renderSuggestions(sbdBEl, sbdBSuggestEl));
+    sbdBEl.addEventListener("focus", () => renderSuggestions(sbdBEl, sbdBSuggestEl));
+    sbdBSuggestEl.addEventListener("click", (e) => {
+      const item = e.target.closest(".suggest-item");
+      if (!item) return;
+      sbdBEl.value = item.dataset.sbd || "";
+      hideSuggestions(sbdBSuggestEl);
+    });
+    document.addEventListener("click", (e) => {
+      if (!e.target.closest(".autocomplete")) {
+        hideSuggestions(querySuggestEl);
+        hideSuggestions(sbdASuggestEl);
+        hideSuggestions(sbdBSuggestEl);
+      }
+    });
+    minTotalEl.addEventListener("input", render);
+    maxTotalEl.addEventListener("input", render);
+    lietFilterEl.addEventListener("change", render);
+    sortEl.addEventListener("change", render);
+    btnCompareEl.addEventListener("click", renderCompare);
+    sbdAEl.addEventListener("keydown", (e) => { if (e.key === "Enter") renderCompare(); });
+    sbdBEl.addEventListener("keydown", (e) => { if (e.key === "Enter") renderCompare(); });
+    window.addEventListener("resize", render);
+    tabButtons.forEach((btn) => {
+      btn.addEventListener("click", () => {
+        const tabId = btn.dataset.tab;
+        tabButtons.forEach((b) => b.classList.remove("active"));
+        tabPanes.forEach((p) => p.classList.remove("active"));
+        btn.classList.add("active");
+        const pane = document.getElementById(tabId);
+        if (pane) pane.classList.add("active");
+        if (tabId === "tab-charts") {
+          requestAnimationFrame(() => renderCharts(filterData(DATA, queryEl.value)));
+        }
+      });
+    });
+
+    rankMetricEl.addEventListener("change", renderRanking);
+    rankLimitEl.addEventListener("change", renderRanking);
+
+    setupHistogramInteractions(histTongEl, readoutTongEl, "Phổ điểm tổng");
+    setupHistogramInteractions(histVanEl, readoutVanEl, "Phổ điểm môn Văn");
+    setupHistogramInteractions(histAnhEl, readoutAnhEl, "Phổ điểm môn Anh");
+    setupHistogramInteractions(histToanEl, readoutToanEl, "Phổ điểm môn Toán");
+
+    renderRanking();
+    render();
+  </script>
+</body>
+</html>
