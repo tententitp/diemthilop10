@@ -3,6 +3,14 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <!-- Open Graph preview (Facebook) -->
+  <meta property="og:title" content="Khoe rồi" />
+  <meta property="og:site_name" content="DIEMTHILOP10" />
+  <meta property="og:description" content="Xem chứng chỉ và thành tích của thí sinh" />
+  <meta property="og:type" content="website" />
+  <meta property="og:image" content="/cert-share.png" />
+  <meta property="og:image:alt" content="Chứng chỉ thành tích" />
+  <meta name="twitter:card" content="summary_large_image" />
   <title>Dashboard tra cứu điểm thi</title>
   <style>
     body {
@@ -75,6 +83,44 @@
     .note strong {
       color: #ffd166;
       font-weight: 700;
+    }
+    .site-footer {
+      margin-top: 18px;
+      font-size: 13px;
+      color: rgba(255,255,255,0.7);
+      text-align: center;
+      padding: 8px 0;
+    }
+    .header {
+      position: fixed;
+      left: 0;
+      right: 0;
+      top: 0;
+      z-index: 5;
+      padding: 22px;
+      box-sizing: border-box;
+      background: linear-gradient(180deg, rgba(255,255,255,0.02), rgba(255,255,255,0.01));
+      backdrop-filter: blur(18px);
+      -webkit-backdrop-filter: blur(18px);
+      border-bottom: 1px solid rgba(255,255,255,0.04);
+    }
+    .main {
+      box-sizing: border-box;
+      margin-top: 220px; /* fallback, will be adjusted by JS */
+      padding: 8px 22px 0 22px;
+      overflow: visible; /* main itself should not be the scroll container */
+    }
+    .pagination button {
+      padding: 6px 10px;
+      border-radius: 6px;
+      border: 1px solid rgba(255,255,255,0.14);
+      background: rgba(15,23,42,0.6);
+      color: #fff;
+      cursor: pointer;
+    }
+    .pagination button:disabled {
+      opacity: 0.45;
+      cursor: default;
     }
     .tabs {
       position: relative;
@@ -301,9 +347,11 @@
     }
     .table-wrap {
       overflow-x: auto;
+      overflow-y: auto; /* allow vertical scrolling only inside the table area */
       -webkit-overflow-scrolling: touch;
       border: 1px solid rgba(255,255,255,0.12);
       border-radius: 10px;
+      /* max-height will be set dynamically based on viewport and header/footer */
     }
     table {
       width: 100%;
@@ -362,22 +410,64 @@
       .rank-controls { grid-template-columns: 1fr; }
       th, td { font-size: 13px; padding: 8px; }
     }
+    /* Modal / share preview styles */
+    .modal-backdrop {
+      position: fixed;
+      inset: 0;
+      background: rgba(2,6,23,0.6);
+      display: none;
+      align-items: center;
+      justify-content: center;
+      z-index: 60;
+      padding: 18px;
+    }
+    .modal-backdrop.show { display: flex; }
+    .modal {
+      width: 100%;
+      max-width: 980px;
+      background: linear-gradient(180deg, rgba(255,255,255,0.02), rgba(255,255,255,0.01));
+      border: 1px solid rgba(255,255,255,0.08);
+      border-radius: 12px;
+      padding: 18px;
+      box-shadow: 0 20px 60px rgba(2,6,23,0.6);
+    }
+    .share-form { display: flex; gap: 12px; align-items: flex-start; }
+    .share-form .fields { flex: 1; display: grid; gap: 8px; }
+    .share-form label { font-size: 13px; color: rgba(255,255,255,0.9); }
+    .share-form input, .share-form select { width: 100%; }
+    .share-preview {
+      width: 420px;
+      min-height: 260px;
+      border-radius: 8px;
+      padding: 12px;
+      background: linear-gradient(0deg, #fff 0%, #f3f4f6 100%);
+      color: #0b1220;
+      box-shadow: 0 6px 20px rgba(2,6,23,0.2);
+      overflow: hidden;
+    }
+    .share-preview .title { font-size: 18px; font-weight: 800; color: #b91c1c; text-align:center; }
+    .share-preview .meta { margin-top: 8px; font-size: 13px; }
+    .share-preview strong { display:block; font-size:16px; color:#111827 }
+    .share-actions { display:flex; gap:8px; justify-content:flex-end; margin-top:12px; }
   </style>
 </head>
 <body>
   <div class="wrap">
-    <h1>Dashboard tra cứu điểm thi</h1>
-    <p class="note">Điểm chuẩn <strong>14.25</strong><br>
-      Chỉ tiêu xét đợt 2 <strong>44 thí sinh</strong><br>
-      Dữ liệu tham khảo từ <a href="https://diemthi.tuyensinh247.com/dc-lop10/hung-yen-p5.html" target="_blank" rel="noopener noreferrer">Trang tuyển sinh 247</a>
-    </p>
-    <div class="tabs">
+    <div class="header">
+      <h1>Dashboard tra cứu điểm thi</h1>
+      <p class="note">Điểm chuẩn <strong>14.25</strong><br>
+        Chỉ tiêu xét đợt 2 <strong>44 thí sinh</strong><br>
+        Dữ liệu tham khảo từ <a href="https://diemthi.tuyensinh247.com/dc-lop10/hung-yen-p5.html" target="_blank" rel="noopener noreferrer">Trang tuyển sinh 247</a>
+      </p>
+      <div class="tabs">
       <button class="tab-btn active" data-tab="tab-list">Toàn bộ danh sách</button>
       <button class="tab-btn" data-tab="tab-ranking">Xếp hạng</button>
       <button class="tab-btn" data-tab="tab-charts">Biểu đồ</button>
       <button class="tab-btn" data-tab="tab-lookup">So sánh</button>
+      </div>
     </div>
 
+    <div class="main">
     <div id="tab-list" class="tab-pane active">
       <div class="controls">
         <div class="autocomplete">
@@ -409,6 +499,11 @@
         </select>
       </div>
       <div class="stats" id="stats"></div>
+      <div class="pagination" style="margin:8px 0; display:flex; gap:8px; align-items:center;">
+        <button id="prevPage" type="button">Previous</button>
+        <span id="pageInfo">Page 1</span>
+        <button id="nextPage" type="button">Next</button>
+      </div>
       <div class="table-wrap">
         <table class="main-score-table">
           <thead>
@@ -424,11 +519,15 @@
               <th>TB 3 môn</th>
               <th>Trạng thái</th>
               <th>Hạng</th>
+              <th>Badge</th>
+              <th>Chia sẻ</th>
             </tr>
           </thead>
           <tbody id="rows"></tbody>
         </table>
       </div>
+    </div>
+
     </div>
 
     <div id="tab-ranking" class="tab-pane">
@@ -504,8 +603,71 @@
       </div>
     </div>
   </div>
+    <!-- Share/verify modal -->
+    <div id="shareModal" class="modal-backdrop" aria-hidden="true">
+      <div class="modal" role="dialog" aria-modal="true">
+        <h3>Khoe thành tích</h3>
+        <div class="share-form">
+          <div class="fields">
+            <label>Số báo danh<input id="shareSbd" type="text"></label>
+            <label>Họ tên<input id="shareName" type="text"></label>
+            <label>Trường<input id="shareSchool" type="text" placeholder="Tên trường"></label>
+            <label>Ngày sinh<input id="shareDob" type="text"></label>
+            <div style="display:flex; gap:8px;"><label>Văn<input id="shareVan" type="number" step="0.1" min="0" max="10"></label><label>Anh<input id="shareAnh" type="number" step="0.1" min="0" max="10"></label><label>Toán<input id="shareToan" type="number" step="0.1" min="0" max="10"></label></div>
+            <label>Ghi chú / Danh hiệu
+              <select id="shareHonor">
+                <option value="">Không</option>
+                <option value="Thủ khoa">Thủ khoa</option>
+                <option value="Thành tích xuất sắc">Thành tích xuất sắc</option>
+                <option value="Khen thưởng">Khen thưởng</option>
+              </select>
+            </label>
+            <label>Badge
+              <select id="shareBadge">
+                <option value="">(Mặc định)</option>
+              </select>
+            </label>
+          </div>
+          <!-- Preview removed per user request -->
+        </div>
+        <div class="share-actions">
+          <label style="margin-right:auto"><input id="shareConfirm" type="checkbox"> Tôi xác nhận thông tin là chính xác</label>
+          <button id="downloadPdf" type="button" disabled>Xem chứng nhận</button>
+          <!-- Social/copy controls moved to certificate page; removed from modal -->
+          <button id="closeShare" type="button">Đóng</button>
+        </div>
+      </div>
+    </div>
+    <div class="site-footer">© 2026 DiepJupiter</div>
 
   <script src="data.js"></script>
+  <script src="badges.js"></script>
+  <script>
+    (function(){
+      try {
+        const arr = window.DIEM_THI || [];
+        if (!arr.length) return;
+        const maxV = Math.max(...arr.map(x => Number(x.Văn) || 0));
+        const maxA = Math.max(...arr.map(x => Number(x.Anh) || 0));
+        const maxT = Math.max(...arr.map(x => Number(x.Toán) || 0));
+        arr.forEach((s) => {
+          let badge = '';
+          const rank = Number(s.STT) || null;
+          if (rank === 1) badge = 'Thủ khoa';
+          else if (rank === 2) badge = 'Á khoa';
+          else if (rank === 3) badge = 'Top 3';
+          else if (rank && rank <= 10) badge = `Top ${rank}`;
+          else if (Number(s.Văn) === maxV) badge = 'Điểm cao nhất môn Văn';
+          else if (Number(s.Anh) === maxA) badge = 'Điểm cao nhất môn Anh';
+          else if (Number(s.Toán) === maxT) badge = 'Điểm cao nhất môn Toán';
+          s.badge = badge;
+        });
+        window.DIEM_THI = arr;
+      } catch (e) { console.warn('badge attach failed', e); }
+    })();
+  </script>
+  <!-- PDF libraries for client-side screenshot -> PDF (html2canvas only used in certificate page now) -->
+  <script src="https://cdn.jsdelivr.net/npm/jspdf@2.5.1/dist/jspdf.umd.min.js"></script>
   <script>
     const DATA = (window.DIEM_THI || []).map((r) => ({
       SBD: String(r.SBD || "").trim(),
@@ -580,6 +742,8 @@
     const readoutAnhEl = document.getElementById("readoutAnh");
     const readoutToanEl = document.getElementById("readoutToan");
     const MAX_RENDER = 200;
+    let currentPage = 1;
+    const PAGE_SIZE = MAX_RENDER;
 
     function normalize(text) {
       return (text || "")
@@ -725,6 +889,16 @@
       kpiCardsEl.innerHTML = cards.map((c) =>
         `<div class="card"><div class="label">${c.label}</div><div class="value">${c.value}</div></div>`
       ).join("");
+    }
+
+    function updatePaginationControls(filteredLength) {
+      const totalPages = Math.max(1, Math.ceil(filteredLength / PAGE_SIZE));
+      const pageInfo = document.getElementById("pageInfo");
+      const prevBtn = document.getElementById("prevPage");
+      const nextBtn = document.getElementById("nextPage");
+      pageInfo.textContent = `Page ${currentPage} / ${totalPages}`;
+      prevBtn.disabled = currentPage <= 1;
+      nextBtn.disabled = currentPage >= totalPages;
     }
 
     function drawHistogram(canvas, values, config) {
@@ -907,11 +1081,13 @@
     function render() {
       const filtered = filterData(DATA, queryEl.value);
       const sorted = sortData(filtered, sortEl.value);
-      const visible = sorted.slice(0, MAX_RENDER);
+      const total = sorted.length;
+      const start = (currentPage - 1) * PAGE_SIZE;
+      const visible = sorted.slice(start, start + PAGE_SIZE);
 
       rowsEl.innerHTML = visible.map((r, idx) => `
         <tr>
-          <td>${idx + 1}</td>
+          <td>${start + idx + 1}</td>
           <td>${r.SBD}</td>
           <td>${r["Họ tên"]}</td>
           <td>${r["Ngày Sinh"] || ""}</td>
@@ -924,17 +1100,23 @@
             r.Dot === "Đỗ" ? "status-pass" : r.Dot === "Xét đợt 2" ? "status-round2" : "status-fail"
           }">${r.Dot || r.TrangThai}</td>
           <td>${r.Hang}</td>
+          <td>$
+            ${ (window.DIEM_BADGES && window.DIEM_BADGES[r.SBD]) ? window.DIEM_BADGES[r.SBD].join(', ') : (r.badge || '') }
+          </td>
+          <td><button class="share-btn" data-sbd="${r.SBD}" type="button">Khoe</button></td>
         </tr>
       `).join("");
 
-      const extra = filtered.length > MAX_RENDER ? ` (đang hiển thị ${MAX_RENDER})` : "";
+      const extra = filtered.length > PAGE_SIZE ? ` (đang hiển thị ${PAGE_SIZE} / ${filtered.length})` : "";
       statsEl.textContent = `Tìm thấy ${filtered.length} học sinh${extra}.`;
+      updatePaginationControls(filtered.length);
       renderKpis(filtered);
       renderCharts(filtered);
     }
 
     queryEl.addEventListener("input", () => {
       queryEl.dataset.selectedSbd = "";
+      currentPage = 1;
       render();
       renderSuggestions(queryEl, querySuggestEl);
     });
@@ -985,10 +1167,288 @@
     maxTotalEl.addEventListener("input", render);
     lietFilterEl.addEventListener("change", render);
     sortEl.addEventListener("change", render);
+    document.getElementById("prevPage").addEventListener("click", () => {
+      if (currentPage > 1) {
+        currentPage -= 1;
+        render();
+      }
+    });
+    document.getElementById("nextPage").addEventListener("click", () => {
+      currentPage += 1;
+      render();
+    });
     btnCompareEl.addEventListener("click", renderCompare);
     sbdAEl.addEventListener("keydown", (e) => { if (e.key === "Enter") renderCompare(); });
     sbdBEl.addEventListener("keydown", (e) => { if (e.key === "Enter") renderCompare(); });
     window.addEventListener("resize", render);
+    // adjust main margin/height based on header size
+    function adjustMainSize() {
+      const header = document.querySelector('.header');
+      const main = document.querySelector('.main');
+      const footer = document.querySelector('.site-footer');
+      const tableWrap = document.querySelector('.table-wrap');
+      if (!header || !main) return;
+      const h = header.offsetHeight;
+      main.style.marginTop = h + 'px';
+      // compute available height for the table area and set maxHeight so only table scrolls
+      if (tableWrap) {
+        const footerH = footer ? footer.offsetHeight : 0;
+        const rect = tableWrap.getBoundingClientRect();
+        const available = Math.max(160, window.innerHeight - footerH - rect.top - 16);
+        tableWrap.style.maxHeight = available + 'px';
+      }
+    }
+    window.addEventListener('resize', adjustMainSize);
+    window.addEventListener('load', adjustMainSize);
+    // run once now
+    adjustMainSize();
+    // --- Share / PDF generation handlers ---
+    const shareModal = document.getElementById('shareModal');
+    const shareSbd = document.getElementById('shareSbd');
+    const shareName = document.getElementById('shareName');
+    const shareDob = document.getElementById('shareDob');
+    const shareVan = document.getElementById('shareVan');
+    const shareAnh = document.getElementById('shareAnh');
+    const shareToan = document.getElementById('shareToan');
+    const shareHonor = document.getElementById('shareHonor');
+    const shareConfirm = document.getElementById('shareConfirm');
+    const downloadPdfBtn = document.getElementById('downloadPdf');
+    const closeShareBtn = document.getElementById('closeShare');
+    // preview elements removed
+    const shareSchool = document.getElementById('shareSchool');
+    const shareBadge = document.getElementById('shareBadge');
+    // share/copy buttons removed from modal
+
+    async function openShareModalFor(student) {
+      console.log('openShareModalFor start', student && student.SBD);
+      shareSbd.value = student.SBD || "";
+      shareName.value = student["Họ tên"] || "";
+      shareDob.value = student["Ngày Sinh"] || "";
+      shareVan.value = (student.Văn || 0).toFixed(2);
+      shareAnh.value = (student.Anh || 0).toFixed(2);
+      shareToan.value = (student.Toán || 0).toFixed(2);
+      shareHonor.value = student.Dot === 'Đỗ' ? 'Thành tích xuất sắc' : '';
+      shareConfirm.checked = false;
+      downloadPdfBtn.disabled = true;
+      // populate badge selector with available badges and default selection
+      try { populateBadgeOptions(student); } catch (e) { /* ignore */ }
+      // prepare values and load full template into modal for live editing
+      const values = {
+        name: shareName.value || '',
+        sbd: shareSbd.value || '',
+        school: shareSchool.value || '',
+        dob: shareDob.value || '',
+        van: shareVan.value || '',
+        anh: shareAnh.value || '',
+        toan: shareToan.value || '',
+        honor: shareHonor.value || '',
+        issued: new Date().toLocaleDateString('vi-VN')
+      };
+      // derive a contextual main title from student's rank / top scores
+      try { values.mainTitle = (shareBadge && shareBadge.value) ? shareBadge.value : computeMainTitle(student); } catch (e) { /* ignore */ }
+      // preview removed: modal shows only form controls
+      shareModal.classList.add('show');
+      console.log('openShareModalFor finished, modal shown for', shareSbd.value);
+      shareModal.setAttribute('aria-hidden','false');
+    }
+
+    function closeShareModal() {
+      console.log('closeShareModal called');
+      shareModal.classList.remove('show');
+      shareModal.setAttribute('aria-hidden','true');
+      // cleanup modal content and any offscreen holders so subsequent opens work without refresh
+      try {
+        // preview removed earlier; still remove any offscreen holders created during rendering
+        // remove any offscreen holder created during rendering
+        const off = document.getElementById('offscreen-certificate-holder');
+        if (off && off.parentNode) off.parentNode.removeChild(off);
+        // remove any imported certificate nodes inside the document
+        Array.from(document.querySelectorAll('[data-imported-certificate]')).forEach(el => el.remove());
+
+        // remove any head assets imported while rendering templates (tracked in window._importedTemplateAssets)
+        try {
+          if (window._importedTemplateAssets && Array.isArray(window._importedTemplateAssets)) {
+            window._importedTemplateAssets.forEach((node) => {
+              try { if (node && node.parentNode) node.parentNode.removeChild(node); } catch (e) { /* ignore */ }
+            });
+            window._importedTemplateAssets = [];
+          }
+        } catch (e) { /* ignore */ }
+
+        // defensive removal: remove any elements explicitly marked as imported-template
+        Array.from(document.querySelectorAll('[data-imported-template]')).forEach(el => el.remove());
+        // also remove any script/link/style tags carrying the marker
+        Array.from(document.querySelectorAll('script[data-imported-template], link[data-imported-template], style[data-imported-template]')).forEach(el => el.remove());
+
+        // delete a few known globals the template might have created to avoid residual state
+        try {
+          delete window.TEMPLATE_VARS;
+          delete window._importedTemplateAssets;
+          delete window._importedTemplateCertificate;
+          delete window._importedTemplateListeners;
+          delete window._importedTemplateTimers;
+        } catch (e) { /* ignore */ }
+
+        // ensure download controls reset
+        if (shareConfirm) shareConfirm.checked = false;
+        if (downloadPdfBtn) downloadPdfBtn.disabled = true;
+        // reset badge selector default
+        if (shareBadge) shareBadge.innerHTML = '<option value="">(Mặc định)</option>';
+        console.log('closeShareModal cleanup completed');
+      } catch (e) { console.warn('closeShareModal cleanup failed', e); }
+    }
+
+    // Preview removed: no live preview updates wired. Keep badge population on SBD input.
+    if (shareSbd) {
+      shareSbd.addEventListener('input', () => {
+        const s = DATA.find(d => d.SBD === (shareSbd.value || '').trim()) || null;
+        try { populateBadgeOptions(s); } catch (e) { /* ignore */ }
+      });
+    }
+    shareConfirm.addEventListener('change', () => {
+      downloadPdfBtn.disabled = !shareConfirm.checked;
+    });
+    closeShareBtn.addEventListener('click', () => { closeShareModal(); try { window.location.reload(); } catch (e) { /* ignore */ } });
+
+    // (openTemplate button removed)
+
+    // Preview functionality removed: rendering functions deleted to simplify flow.
+
+    function setTemplateFields(root, values) {
+      try {
+        const set = (id, v) => {
+          const el = root.querySelector(`[data-template-id="${id}"]`);
+          if (el) el.textContent = v || '';
+        };
+        set('student-name', values.name || '');
+        set('candidate-value', values.sbd || '');
+        set('birth-value', values.dob || '');
+        set('school-value', values.school || '');
+        set('score-1', values.van || '');
+        set('score-2', values.anh || '');
+        set('score-3', values.toan || '');
+        const total = [Number(values.van)||0, Number(values.anh)||0, Number(values.toan)||0].reduce((a,b)=>a+b,0).toFixed(2);
+        set('total-number', total);
+        if (values.honor) set('footnote', values.honor);
+        set('issued-date', values.issued || '');
+        set('footer-text', values.footer || '');
+        // set main title if provided
+        try { if (values.mainTitle) set('main-title', values.mainTitle); } catch(e){}
+        // student-description should include the school if provided
+        try {
+          const descBase = values.studentDescription || 'Học sinh';
+          const schoolPart = values.school || '';
+          const finalDesc = schoolPart ? `${descBase} ${schoolPart}` : descBase;
+          set('student-description', finalDesc);
+        } catch (e) { /* ignore */ }
+      } catch (e) {
+        console.warn('setTemplateFields failed', e);
+      }
+    }
+
+    // compute a human-friendly main title based on student's rank or top subject
+    function computeMainTitle(student) {
+      try {
+        if (!student) return (window.TEMPLATE_VARS && window.TEMPLATE_VARS.mainTitle) || 'VINH DANH';
+        const rank = Number(student.Hang) || null;
+        if (rank === 1) return 'Thủ khoa (Hạng 1)';
+        if (rank === 2) return 'Á khoa (Hạng 2)';
+        if (rank === 3) return 'Top 3';
+        if (rank && rank <= 10) return `Top ${rank}`;
+        // If student passed and ranked beyond 50, use 'Vượt qua' as the title
+        if (rank && rank > 50 && (Number(student.Tổng) || 0) >= 14.25) return 'Vượt qua';
+        // check if student has the highest score in any subject
+        const maxVan = Math.max(...DATA.map(d=>Number(d.Văn)||0));
+        const maxAnh = Math.max(...DATA.map(d=>Number(d.Anh)||0));
+        const maxToan = Math.max(...DATA.map(d=>Number(d.Toán)||0));
+        if ((Number(student.Văn)||0) === maxVan) return 'Điểm cao nhất môn Văn';
+        if ((Number(student.Anh)||0) === maxAnh) return 'Điểm cao nhất môn Anh';
+        if ((Number(student.Toán)||0) === maxToan) return 'Điểm cao nhất môn Toán';
+        return (window.TEMPLATE_VARS && window.TEMPLATE_VARS.mainTitle) || 'VINH DANH';
+      } catch (e) { return 'VINH DANH'; }
+    }
+
+    function getAvailableBadges() {
+      try {
+        const fromData = Array.from(new Set(DATA.map(d => (d.badge || '').trim()).filter(Boolean)));
+        const fromMapping = window.DIEM_BADGES ? Array.from(new Set(Object.values(window.DIEM_BADGES).flat().map(x => (x||'').trim()).filter(Boolean))) : [];
+        return Array.from(new Set(fromMapping.concat(fromData)));
+      } catch (e) { return []; }
+    }
+
+    function populateBadgeOptions(student) {
+      if (!shareBadge) return;
+      const sbd = student && student.SBD ? String(student.SBD) : (shareSbd && shareSbd.value) ? String(shareSbd.value) : '';
+      // Prefer explicit mapping for the student
+      const mapped = (window.DIEM_BADGES && window.DIEM_BADGES[sbd]) ? window.DIEM_BADGES[sbd] : null;
+      if (mapped && mapped.length) {
+        const html = ['<option value="">(Mặc định)</option>'].concat(mapped.map(b => `<option value="${b}">${b}</option>`)).join('');
+        shareBadge.innerHTML = html;
+        shareBadge.value = mapped[0];
+        return;
+      }
+      // If no explicit mapping, offer only the computed main title and any derived badge on the record
+      const computed = (typeof computeMainTitle === 'function') ? computeMainTitle(student) : '';
+      const derived = (student && student.badge) ? [student.badge] : [];
+      const uniq = Array.from(new Set([computed].concat(derived).filter(Boolean)));
+      if (!uniq.length) {
+        shareBadge.innerHTML = '<option value="">(Không có badge)</option>';
+        shareBadge.value = '';
+        return;
+      }
+      const html = ['<option value="">(Mặc định)</option>'].concat(uniq.map(b => `<option value="${b}">${b}</option>`)).join('');
+      shareBadge.innerHTML = html;
+      shareBadge.value = uniq[0];
+    }
+
+    // event delegation for share buttons in table
+    rowsEl.addEventListener('click', (e) => {
+      const btn = e.target.closest('.share-btn');
+      if (!btn) return;
+      const sbd = btn.dataset.sbd;
+      const student = DATA.find((x) => x.SBD === sbd);
+      if (!student) return;
+      openShareModalFor(student);
+    });
+
+    downloadPdfBtn.addEventListener('click', () => {
+      if (!shareConfirm.checked) return;
+      // compute mainTitle from student record if available
+      const studentRecord = DATA.find(d => d.SBD === (shareSbd.value || '').trim());
+      const mainTitle = (shareBadge && shareBadge.value) ? shareBadge.value : computeMainTitle(studentRecord);
+      const params = new URLSearchParams({
+        name: shareName.value || '',
+        sbd: shareSbd.value || '',
+        school: shareSchool.value || '',
+        dob: shareDob.value || '',
+        van: shareVan.value || '',
+        anh: shareAnh.value || '',
+        toan: shareToan.value || '',
+        honor: shareHonor.value || '',
+        issued: new Date().toLocaleDateString('vi-VN'),
+        mainTitle: mainTitle || ''
+      });
+      // include badges: prefer DIEM_BADGES mapping for the SBD, otherwise use selected badge or derived badge
+      try {
+        const sbdVal = (shareSbd.value || '').trim();
+        let badgesParam = '';
+        if (sbdVal && window.DIEM_BADGES && Array.isArray(window.DIEM_BADGES[sbdVal]) && window.DIEM_BADGES[sbdVal].length) {
+          badgesParam = window.DIEM_BADGES[sbdVal].join(',');
+        } else {
+          const fallback = [];
+          if (shareBadge && shareBadge.value) fallback.push(shareBadge.value);
+          if (studentRecord && studentRecord.badge) fallback.push(studentRecord.badge);
+          badgesParam = Array.from(new Set(fallback.filter(Boolean))).join(',');
+        }
+        if (badgesParam) params.append('badges', badgesParam);
+      } catch (e) { /* ignore */ }
+      const url = 'certificate_template.html?' + params.toString();
+      window.open(url, '_blank');
+      closeShareModal();
+      // simple reset: refresh page so template assets and state are cleared
+      setTimeout(() => { try { window.location.reload(); } catch (e) { /* ignore */ } }, 80);
+    });
+    // Preview and modal-sharing controls removed per user request
     tabButtons.forEach((btn) => {
       btn.addEventListener("click", () => {
         const tabId = btn.dataset.tab;
